@@ -1,0 +1,7 @@
+The .github file hold inforamtion about
+1.Known bugs
+2. addtional wanted features
+3.info about github repository
+4.how to make a pull request
+5.project license info
+6.version history
