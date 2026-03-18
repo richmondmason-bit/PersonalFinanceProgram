@@ -1,16 +1,26 @@
 import pygame
-
+import sys
 pygame.init()
-screen = pygame.display.set_mode((600, 400))
-font = pygame.font.SysFont("monospace", 20)
-terminal_history = ["System initialized...", "User logged in.", "> Ready for input"]
-
-
-def draw_terminal():
-    screen.fill((0, 0, 0)) 
-    for i, line in enumerate(terminal_history):
-        
-        text_surface = font.render(line, True, (0, 255, 0))
-      
-        screen.blit(text_surface, (10, 10 + (i * 25)))
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("Personal Finanace")
+clock = pygame.time.Clock()
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False 
+    screen.fill((30, 30, 30)) 
     pygame.display.flip()
+    clock.tick(60)
+if input("")
+#main
+def main():
+    print("Personal Finance")
+    
+    while True:
+       print("main worked")
+
+if __name__ == "__main__":
+    main()
