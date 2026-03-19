@@ -5,16 +5,17 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((800, 600))
     font = pygame.font.SysFont("consolas", 18)
-
+    image = pygame.image.load("testing/1615991837602.png").convert_alpha()
+    image = pygame.transform.scale(image, (426, 240))
     state = "MENU"
     history = ["Welcome to Finance Tracker.", "[1] Add Transaction", "[2] View Total"]
     transactions = []
     current_entry = {}
     user_text = ""
     running = True
+    icon_surface = pygame.image.load("testing/1615991837602.png").convert_alpha()
 
     while running:
-        # Dynamic prompt based on what the "state" is
         if state == "MENU":
             active_question = "SELECT (1 or 2):"
         elif state == "GET_NAME":
@@ -31,7 +32,6 @@ def main():
                 if event.key == pygame.K_RETURN:
                     cmd = user_text.strip().lower()
                     history.append(f"{active_question} {user_text}")
-
 
                     if state == "MENU":
                         if cmd == "1":
@@ -56,13 +56,13 @@ def main():
                     elif state == "CONFIRM":
                         if cmd == "y":
                             transactions.append(current_entry.copy())
-                            history.append(">>> TRANSACTION SAVED.")
+                            history.append(" TRANSACTION SAVED.")
                         else:
-                            history.append(">>> CANCELLED.")
+                            history.append("CANCELLED.")
                         state = "MENU"
                         current_entry = {}
                         history.append("[1] Add Transaction, [2] View Total")
-
+                    
                     user_text = ""
                     if len(history) > 15: history.pop(0)
 
@@ -73,6 +73,8 @@ def main():
                         user_text += event.unicode
 
         screen.fill((30, 30, 30))
+        screen.blit(image, (350, 20))
+
         y_pos = 20
         for line in history:
             color = (0, 255, 255) if ">>>" in line else (120, 120, 120)
@@ -84,7 +86,11 @@ def main():
         screen.blit(prompt_surf, (20, y_pos))
         input_surf = font.render(f"> {user_text}", True, (255, 255, 255))
         screen.blit(input_surf, (20, y_pos + 25))
-
+        try:
+            icon_surface = pygame.image.load('testing/1615991837602.png')
+        except pygame.error as message:
+            print(f"Cannot load image: {message}")
+            icon_surface = None # 
         pygame.display.flip()
 
     pygame.quit()
