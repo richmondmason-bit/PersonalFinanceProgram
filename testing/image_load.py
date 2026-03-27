@@ -8,14 +8,19 @@ WIDTH, HEIGHT = 800, 600
 BG_COLOR = (30, 30, 30)
 TEXT_COLOR = (220, 220, 220)
 PROMPT_COLOR = (0, 255, 100)
-HISTORY_COLOR = (120, 120, 120)
+HISTORY_COLOR = (180, 180, 180)
 ERROR_COLOR = (255, 80, 80)
 SUCCESS_COLOR = (0, 255, 0)
 
-CHARACTER_LIMIT = 30000000000
-MAX_HISTORY = 20000000
+LINE_HEIGHT = 24
+VISIBLE_LINES = 18
+HISTORY_START_Y = 20
 
-CSV_FILE = Path("docs\Expenses.csv")
+CHARACTER_LIMIT = 300_000_000
+MAX_HISTORY = 20_000
+
+CSV_FILE = Path("docs/Expenses.csv")
+
 
 def load_transactions() -> List[Dict]:
     transactions = []
@@ -33,24 +38,26 @@ def load_transactions() -> List[Dict]:
             pass
     return transactions
 
+
 def save_transactions(transactions: List[Dict]):
     try:
+        CSV_FILE.parent.mkdir(parents=True, exist_ok=True)
         with open(CSV_FILE, "w", encoding="utf-8", newline="") as f:
             fieldnames = ['name', 'amount']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for t in transactions:
                 writer.writerow({'name': t.get('name', ''), 'amount': t.get('amount', 0)})
+        return True
     except Exception:
-        pass
+        return False
+
 
 def clean_text(text: str) -> str:
-    """Remove null characters and other control characters that crash font.render"""
     if not text:
         return ""
-    # Remove null characters and control characters (except tab and newline if needed)
-    cleaned = ''.join(c for c in text if c >= ' ' or c in '\t\n')
-    return cleaned.strip()
+    return ''.join(c for c in text if c >= ' ' or c in '\t\n').strip()
+
 
 def main():
     pygame.init()
@@ -62,11 +69,11 @@ def main():
 
     pygame.scrap.init()
 
-    image_path = Path("testing/Pictures/1615991837602.png")
     logo = None
     try:
+        image_path = Path("testing/Pictures/1615991837602.png")
         logo = pygame.image.load(image_path).convert_alpha()
-        logo = pygame.transform.scale(logo, (426, 240))
+        logo = pygame.transform.scale(logo, (160, 90))
     except Exception:
         pass
 
@@ -85,6 +92,7 @@ def main():
     user_text = ""
     running = True
     clock = pygame.time.Clock()
+
     last_blink = 0
     show_cursor = True
 
@@ -113,16 +121,12 @@ def main():
                 running = False
 
             elif event.type == pygame.KEYDOWN:
-                # Clipboard Support
                 if event.key == pygame.K_v and (event.mod & pygame.KMOD_CTRL):
                     try:
-                        clipboard_text = pygame.scrap.get(pygame.SCRAP_TEXT)
-                        if clipboard_text:
-                            pasted = clipboard_text.decode('utf-8', errors='ignore')
-                            pasted = clean_text(pasted)
-                            remaining = CHARACTER_LIMIT - len(user_text)
-                            if remaining > 0:
-                                user_text += pasted[:remaining]
+                        clipboard = pygame.scrap.get(pygame.SCRAP_TEXT)
+                        if clipboard:
+                            pasted = clipboard.decode('utf-8', errors='ignore')
+                            user_text += clean_text(pasted)[:CHARACTER_LIMIT - len(user_text)]
                     except Exception:
                         pass
 
@@ -140,11 +144,6 @@ def main():
 
                     history.append(f"{active_question} {user_text}")
 
-                    if len(user_text) > CHARACTER_LIMIT:
-                        history.append("Error: Input too long!")
-                        user_text = ""
-                        continue
-
                     processed = False
 
                     if state == "MENU":
@@ -156,22 +155,22 @@ def main():
                         elif cmd_lower == "2":
                             total = sum(t.get('amount', 0) for t in transactions)
                             history.append(f"TOTAL BALANCE: ${total:.2f}")
-                            history.append("─" * 50)
+                            history.append("─" * 60)
                             processed = True
                         elif cmd_lower == "3":
                             if transactions:
                                 history.append("RECENT TRANSACTIONS:")
                                 for t in transactions[-10:]:
-                                    history.append(f"  • {t.get('name', 'Unknown'):<25} ${t.get('amount', 0):>10.2f}")
+                                    history.append(f"  • {t.get('name', 'Unknown'):<30} ${t.get('amount', 0):>12.2f}")
                             else:
-                                history.append("No transactions recorded yet.")
-                            history.append("─" * 50)
+                                history.append("No transactions yet.")
+                            history.append("─" * 60)
                             processed = True
                         elif cmd_lower in ["q", "quit", "exit"]:
                             running = False
                             continue
                         else:
-                            history.append("Invalid option. Please use 1, 2, 3, or Q.")
+                            history.append("Invalid option.")
 
                     elif state == "GET_NAME":
                         if cmd:
@@ -183,19 +182,21 @@ def main():
 
                     elif state == "GET_AMOUNT":
                         try:
-                            clean_amount = cmd.replace(',', '').strip()
-                            amount = float(clean_amount)
+                            amount = float(cmd.replace(',', '').strip())
                             current_entry['amount'] = amount
                             state = "CONFIRM"
                             processed = True
                         except ValueError:
-                            history.append("Error: Please enter a valid number (e.g., 45.50 or -12.99)")
+                            history.append("Error: Invalid number.")
 
                     elif state == "CONFIRM":
                         if cmd.lower() == "y":
                             transactions.append(current_entry.copy())
-                            save_transactions(transactions)
-                            history.append("✓ TRANSACTION SAVED SUCCESSFULLY.")
+                            saved_ok = save_transactions(transactions)   # ← Save immediately
+                            if saved_ok:
+                                history.append("✓ TRANSACTION SAVED SUCCESSFULLY.")
+                            else:
+                                history.append("✓ TRANSACTION SAVED (in memory) - File write failed.")
                         else:
                             history.append("Transaction cancelled.")
                         state = "MENU"
@@ -207,45 +208,8 @@ def main():
 
                     user_text = ""
 
-                    if processed:
-                        screen.fill(BG_COLOR)
-                        if logo:
-                            screen.blit(logo, (187, 20))
-
-                        y_pos = 280
-                        for line in history:
-                            if "Error" in line or "Invalid" in line:
-                                color = ERROR_COLOR
-                            elif "SAVED" in line or "TOTAL" in line or "✓" in line or "BALANCE" in line:
-                                color = SUCCESS_COLOR
-                            else:
-                                color = HISTORY_COLOR
-                            surf = font.render(line, True, color)
-                            screen.blit(surf, (20, y_pos))
-                            y_pos += 24
-                            if y_pos > HEIGHT - 140:
-                                break
-
-                        prompt_surf = font.render(active_question, True, PROMPT_COLOR)
-                        screen.blit(prompt_surf, (20, y_pos))
-
-                        cursor_text = f"> {user_text}" + ("_" if show_cursor else " ")
-                        input_surf = font.render(cursor_text, True, TEXT_COLOR)
-                        screen.blit(input_surf, (20, y_pos + 28))
-
-                        status = f"Transactions: {len(transactions)} | State: {state}"
-                        status_surf = small_font.render(status, True, (100, 100, 100))
-                        screen.blit(status_surf, (20, HEIGHT - 28))
-
-                        help_surf = small_font.render("Ctrl+V = Paste | Ctrl+C = Copy", True, (80, 80, 80))
-                        screen.blit(help_surf, (20, HEIGHT - 50))
-
-                        pygame.display.flip()
-                        continue
-
                 elif event.key == pygame.K_BACKSPACE:
                     user_text = user_text[:-1]
-
                 elif event.key == pygame.K_ESCAPE:
                     if state != "MENU":
                         state = "MENU"
@@ -253,19 +217,26 @@ def main():
                         history.append("← Action cancelled.")
                     else:
                         running = False
-
                 else:
                     if event.unicode.isprintable() and len(user_text) < CHARACTER_LIMIT:
                         user_text += event.unicode
 
-        # Main rendering
+        # Rendering
         screen.fill(BG_COLOR)
 
         if logo:
-            screen.blit(logo, (187, 20))
+            logo_x = WIDTH - logo.get_width() - 20
+            logo_y = 15
+            screen.blit(logo, (logo_x, logo_y))
 
-        y_pos = 280
-        for line in history:
+        y_pos = HISTORY_START_Y
+        start_idx = max(0, len(history) - VISIBLE_LINES)
+
+        for i in range(VISIBLE_LINES):
+            if start_idx + i >= len(history):
+                break
+            line = history[start_idx + i]
+
             if "Error" in line or "Invalid" in line:
                 color = ERROR_COLOR
             elif "SAVED" in line or "TOTAL" in line or "✓" in line or "BALANCE" in line:
@@ -273,32 +244,49 @@ def main():
             else:
                 color = HISTORY_COLOR
 
-            surf = font.render(line, True, color)
-            screen.blit(surf, (20, y_pos))
-            y_pos += 24
-            if y_pos > HEIGHT - 140:
-                break
+            try:
+                surf = font.render(line, True, color)
+                screen.blit(surf, (30, y_pos))
+            except Exception:
+                safe_line = clean_text(line)
+                surf = font.render(safe_line[:200], True, color)
+                screen.blit(surf, (30, y_pos))
+
+            y_pos += LINE_HEIGHT
 
         prompt_surf = font.render(active_question, True, PROMPT_COLOR)
-        screen.blit(prompt_surf, (20, y_pos))
+        screen.blit(prompt_surf, (30, y_pos))
+        y_pos += LINE_HEIGHT
 
-        cursor_text = f"> {user_text}" + ("_" if show_cursor and state != "MENU" else " ")
+        cursor = "_" if show_cursor and state != "MENU" else " "
+        cursor_text = f"> {user_text}{cursor}"
         input_surf = font.render(cursor_text, True, TEXT_COLOR)
-        screen.blit(input_surf, (20, y_pos + 28))
+        screen.blit(input_surf, (30, y_pos))
 
-        status = f"Transactions: {len(transactions)} | State: {state}"
+        status = f"Transactions: {len(transactions)} | State: {state} | History lines: {len(history)}"
         status_surf = small_font.render(status, True, (100, 100, 100))
-        screen.blit(status_surf, (20, HEIGHT - 28))
+        screen.blit(status_surf, (30, HEIGHT - 55))
 
-        help_surf = small_font.render("Ctrl+V = Paste | Ctrl+C = Copy", True, (80, 80, 80))
-        screen.blit(help_surf, (20, HEIGHT - 50))
+        help_text = "Ctrl+V Paste | Ctrl+C Copy | ESC to cancel"
+        help_surf = small_font.render(help_text, True, (80, 80, 80))
+        screen.blit(help_surf, (30, HEIGHT - 32))
+
+        if len(history) > VISIBLE_LINES:
+            track_height = HEIGHT - 120
+            thumb_height = max(20, int(track_height * (VISIBLE_LINES / len(history))))
+            thumb_y = HEIGHT - 120 - thumb_height
+
+            pygame.draw.rect(screen, (60, 60, 60), (WIDTH - 14, 20, 8, track_height))
+            pygame.draw.rect(screen, (180, 180, 200), (WIDTH - 14, thumb_y, 8, thumb_height))
 
         pygame.display.flip()
         clock.tick(60)
 
+    # Final save on exit (safety)
     save_transactions(transactions)
     pygame.quit()
     sys.exit()
+
 
 if __name__ == "__main__":
     main()
