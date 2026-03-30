@@ -11,13 +11,11 @@ PROMPT_COLOR = (0, 255, 100)
 HISTORY_COLOR = (180, 180, 180)
 ERROR_COLOR = (255, 80, 80)
 SUCCESS_COLOR = (0, 255, 0)
-
 LINE_HEIGHT = 24
 VISIBLE_LINES = 18
 HISTORY_START_Y = 20
-
-CHARACTER_LIMIT = 300_000_000
-MAX_HISTORY = 20_000
+CHARACTER_LIMIT = 300
+MAX_HISTORY = 20
 
 CSV_FILE = Path("docs/Expenses.csv")
 
@@ -82,12 +80,12 @@ def main():
     state = "MENU"
     history: List[str] = [
         "Welcome to Finance Tracker.",
-        "[1] Add Transaction",
-        "[2] View Total Balance",
-        "[3] View Recent Transactions",
-        "[4] Remove Transaction",
-        "[5] Edit Transaction (name & value)",
-        "[Q] Quit"
+        "1.Add Transaction",
+        "2.View Total Balance",
+        "3.View Recent Transactions",
+        "4.Remove Transaction",
+        "5.Edit Transaction (name & value)",
+        "Q.Quit"
     ]
     
     current_entry: Dict[str, any] = {}
