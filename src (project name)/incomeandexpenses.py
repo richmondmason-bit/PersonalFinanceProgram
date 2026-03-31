@@ -23,3 +23,4 @@
 # remove that value from the respective csv, by reading the file, and then writing, 
 # but skipping over the selected point, and then have them input a new value, before appending that to the right csv.
 
+#Find the percent of each expense category compared to the total, and then send it to the terminal so that the pie chart can be created
