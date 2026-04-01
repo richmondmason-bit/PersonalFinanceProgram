@@ -2,3 +2,5 @@ date,type,amount,detail
 2026-03-31,expense,5087.0,pluh
 2026-03-31,expense,78787.0,not this
 333,income,8687.0,Job
+2026-04-01,income,560.0,Job
+2026-04-01,expense,750.0,job
