@@ -1,3 +1,4 @@
-name,amount
-pluh,5087.0
-butt plug,78787.0
+date,type,amount,detail
+2026-03-31,expense,5087.0,pluh
+2026-03-31,expense,78787.0,not this
+333,income,8687.0,Job

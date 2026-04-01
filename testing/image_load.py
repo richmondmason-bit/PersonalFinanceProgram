@@ -77,7 +77,7 @@ def main():
 
     transactions: List[Dict] = load_transactions()
 
-    state = "MENU"
+    ProgramState = "MENU"
     history: List[str] = [
         "Welcome to Finance Tracker.",
         "1.Add Transaction",
@@ -89,7 +89,7 @@ def main():
     ]
     
     current_entry: Dict[str, any] = {}
-    edit_index = -1
+    Editing = -1
     user_text = ""
     running = True
     clock = pygame.time.Clock()
@@ -103,27 +103,27 @@ def main():
             show_cursor = not show_cursor
             last_blink = current_time
 
-        if state == "MENU":
-            active_question = "SELECT OPTION (1-5 or Q):"
-        elif state == "GET_NAME":
-            active_question = "ENTER ITEM NAME:"
-        elif state == "GET_AMOUNT":
+        if ProgramState == "MENU":
+            question = "SELECT OPTION (1-5 or Q):"
+        elif ProgramState == "GET_NAME":
+            question = "ENTER ITEM NAME:"
+        elif ProgramState == "GET_AMOUNT":
             name = current_entry.get('name', 'ITEM')
-            active_question = f"ENTER AMOUNT FOR '{name}' (use - for expense):"
-        elif state == "CONFIRM":
+            question = f"ENTER AMOUNT FOR '{name}' (use - for expense):"
+        elif ProgramState == "CONFIRM":
             name = current_entry.get('name', '')
             amt = current_entry.get('amount', 0.0)
-            active_question = f"SAVE '{name}' (${amt:.2f})? (y/n):"
-        elif state == "REMOVE_SELECT":
-            active_question = "ENTER NUMBER TO REMOVE (0 to cancel):"
-        elif state == "EDIT_SELECT":
-            active_question = "ENTER NUMBER TO EDIT (0 to cancel):"
-        elif state == "EDIT_NAME":
-            active_question = "NEW NAME (leave blank to keep current):"
-        elif state == "EDIT_AMOUNT":
-            active_question = "NEW AMOUNT (leave blank to keep current):"
+            question = f"SAVE '{name}' (${amt:.2f})? (y/n):"
+        elif ProgramState == "REMOVE_SELECT":
+            question = "ENTER NUMBER TO REMOVE (0 to cancel):"
+        elif ProgramState == "EDIT_SELECT":
+            question = "ENTER NUMBER TO EDIT (0 to cancel):"
+        elif ProgramState == "EDIT_NAME":
+            question = "NEW NAME (leave blank to keep current):"
+        elif ProgramState == "EDIT_AMOUNT":
+            question = "NEW AMOUNT (leave blank to keep current):"
         else:
-            active_question = ""
+            question = ""
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -149,21 +149,21 @@ def main():
                 elif event.key == pygame.K_RETURN:
                     cmd = user_text.strip()
 
-                    if not cmd and state == "MENU":
+                    if not cmd and ProgramState == "MENU":
                         continue
 
-                    history.append(f"{active_question} {user_text}")
+                    history.append(f"{question} {user_text}")
 
-                    if state == "MENU":
-                        cmd_lower = cmd.lower()
-                        if cmd_lower == "1":
-                            state = "GET_NAME"
+                    if ProgramState == "MENU":
+                        command_lower = cmd.lower()
+                        if command_lower == "1":
+                            ProgramState = "GET_NAME"
                             current_entry = {}
-                        elif cmd_lower == "2":
+                        elif command_lower == "2":
                             total = sum(t.get('amount', 0) for t in transactions)
                             history.append(f"TOTAL BALANCE: ${total:.2f}")
                             history.append("─" * 60)
-                        elif cmd_lower == "3":
+                        elif command_lower == "3":
                             if transactions:
                                 history.append("RECENT TRANSACTIONS:")
                                 for t in transactions[-10:]:
@@ -171,52 +171,52 @@ def main():
                             else:
                                 history.append("No transactions yet.")
                             history.append("─" * 60)
-                        elif cmd_lower == "4":
-                            state = "REMOVE_SELECT"
+                        elif command_lower == "4":
+                            ProgramState = "REMOVE_SELECT"
                             history.append("─" * 60)
                             history.append("RECENT TRANSACTIONS (most recent first):")
                             for i, t in enumerate(reversed(transactions[-15:]), 1):
                                 history.append(f"  {i:2d}. {t.get('name', 'Unknown'):<28} ${t.get('amount', 0):>10.2f}")
                             history.append("─" * 60)
-                        elif cmd_lower == "5":
-                            state = "EDIT_SELECT"
+                        elif command_lower == "5":
+                            ProgramState = "EDIT_SELECT"
                             history.append("─" * 60)
                             history.append("RECENT TRANSACTIONS (most recent first):")
                             for i, t in enumerate(reversed(transactions[-15:]), 1):
                                 history.append(f"  {i:2d}. {t.get('name', 'Unknown'):<28} ${t.get('amount', 0):>10.2f}")
                             history.append("─" * 60)
-                        elif cmd_lower in ["q", "quit", "exit"]:
+                        elif command_lower in ["q", "quit", "exit"]:
                             running = False
                             continue
                         else:
                             history.append("Invalid option.")
 
-                    elif state == "GET_NAME":
+                    elif ProgramState == "GET_NAME":
                         if cmd:
                             current_entry['name'] = cmd
-                            state = "GET_AMOUNT"
+                            ProgramState = "GET_AMOUNT"
                         else:
                             history.append("Error: Name cannot be empty.")
 
-                    elif state == "GET_AMOUNT":
+                    elif ProgramState == "GET_AMOUNT":
                         try:
                             amount = float(cmd.replace(',', '').strip())
                             current_entry['amount'] = amount
-                            state = "CONFIRM"
+                            ProgramState = "CONFIRM"
                         except ValueError:
                             history.append("Error: Invalid number.")
 
-                    elif state == "CONFIRM":
+                    elif ProgramState == "CONFIRM":
                         if cmd.lower() == "y":
                             transactions.append(current_entry.copy())
                             save_transactions(transactions)
                             history.append("✓ TRANSACTION SAVED SUCCESSFULLY.")
                         else:
                             history.append("Transaction cancelled.")
-                        state = "MENU"
+                        ProgramState = "MENU"
                         current_entry = {}
 
-                    elif state == "REMOVE_SELECT":
+                    elif ProgramState == "REMOVE_SELECT":
                         try:
                             num = int(cmd)
                             if num == 0:
@@ -230,48 +230,48 @@ def main():
                                 history.append("Invalid number.")
                         except ValueError:
                             history.append("Please enter a valid number.")
-                        state = "MENU"
+                        ProgramState = "MENU"
 
-                    elif state == "EDIT_SELECT":
+                    elif ProgramState == "EDIT_SELECT":
                         try:
                             num = int(cmd)
                             if num == 0:
                                 history.append("Edit cancelled.")
-                                state = "MENU"
+                                ProgramState = "MENU"
                             elif 1 <= num <= min(15, len(transactions)):
-                                edit_index = len(transactions) - num
-                                state = "EDIT_NAME"
-                                current = transactions[edit_index]
+                                Editing = len(transactions) - num
+                                ProgramState = "EDIT_NAME"
+                                current = transactions[Editing]
                                 history.append(f"Editing: {current.get('name')} (${current.get('amount'):.2f})")
                             else:
                                 history.append("Invalid number.")
-                                state = "MENU"
+                                ProgramState = "MENU"
                         except ValueError:
                             history.append("Please enter a valid number.")
-                            state = "MENU"
+                            ProgramState = "MENU"
 
-                    elif state == "EDIT_NAME":
+                    elif ProgramState == "EDIT_NAME":
                         if cmd:
-                            transactions[edit_index]['name'] = cmd
+                            transactions[Editing]['name'] = cmd
                             history.append(f"Name updated to: {cmd}")
                         else:
                             history.append("Name unchanged.")
-                        state = "EDIT_AMOUNT"
+                        ProgramState = "EDIT_AMOUNT"
 
-                    elif state == "EDIT_AMOUNT":
+                    elif ProgramState == "EDIT_AMOUNT":
                         if cmd:
                             try:
                                 new_amt = float(cmd.replace(',', '').strip())
-                                transactions[edit_index]['amount'] = new_amt
+                                transactions[Editing]['amount'] = new_amt
                                 history.append(f"Amount updated to: ${new_amt:.2f}")
                             except ValueError:
                                 history.append("Invalid amount - amount unchanged.")
                         else:
                             history.append("Amount unchanged.")
                         save_transactions(transactions)
-                        history.append("✓ TRANSACTION EDITED SUCCESSFULLY.")
-                        state = "MENU"
-                        edit_index = -1
+                        history.append("TRANSACTION EDITED SUCCESSFULLY.")
+                        ProgramState = "MENU"
+                        Editing = -1
 
                     if len(history) > MAX_HISTORY:
                         history = history[-MAX_HISTORY:]
@@ -281,10 +281,10 @@ def main():
                 elif event.key == pygame.K_BACKSPACE:
                     user_text = user_text[:-1]
                 elif event.key == pygame.K_ESCAPE:
-                    if state != "MENU":
-                        state = "MENU"
+                    if ProgramState != "MENU":
+                        ProgramState = "MENU"
                         current_entry = {}
-                        edit_index = -1
+                        Editing = -1
                         history.append("← Action cancelled.")
                     else:
                         running = False
@@ -324,16 +324,16 @@ def main():
 
             y_pos += LINE_HEIGHT
 
-        prompt_surf = font.render(active_question, True, PROMPT_COLOR)
+        prompt_surf = font.render(question, True, PROMPT_COLOR)
         screen.blit(prompt_surf, (30, y_pos))
         y_pos += LINE_HEIGHT
 
-        cursor = "_" if show_cursor and state != "MENU" else " "
+        cursor = "_" if show_cursor and ProgramState != "MENU" else " "
         cursor_text = f"> {user_text}{cursor}"
         input_surf = font.render(cursor_text, True, TEXT_COLOR)
         screen.blit(input_surf, (30, y_pos))
 
-        status = f"Transactions: {len(transactions)} | State: {state} | History lines: {len(history)}"
+        status = f"Transactions: {len(transactions)} | State: {ProgramState} | History lines: {len(history)}"
         status_surf = small_font.render(status, True, (100, 100, 100))
         screen.blit(status_surf, (30, HEIGHT - 55))
 
