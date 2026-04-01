@@ -147,14 +147,14 @@ def main():
 
     ProgramState = "MENU"
     history: List[str] = [
-        "Welcome to Finance Tracker (v2)",
+        "Welcome to Finance Tracker",
         "1. Add Income",
         "2. Add Expense",
         "3. View Balance & Goal Progress",
         "4. View Recent Transactions",
         "5. Remove Transaction",
         "6. Edit Transaction",
-        "7. View Expense Pie Chart (by Category)",
+        "7. View Expense Pie Chart",
         "8. Set Savings Goal",
         "Q. Quit"
     ]

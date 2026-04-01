@@ -3,7 +3,8 @@ import sys
 import csv
 from pathlib import Path
 from typing import List, Dict
-
+#old program version with diffrent program state logic, new version has reworked logic thats uses
+#uses recursion and easy to ad new programstate
 WIDTH, HEIGHT = 800, 600
 BG_COLOR = (30, 30, 30)
 TEXT_COLOR = (220, 220, 220)
