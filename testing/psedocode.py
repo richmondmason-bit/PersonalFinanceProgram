@@ -1,0 +1,204 @@
+#MAIN:
+#    initialize Pygame window (WIDTH, HEIGHT)
+#    set window title
+#    create main font (18pt) and small font (16pt)
+#    initialize clipboard support
+#    load optional logo image (scale to 160×90 if exists)
+#
+#    transactions = load_transactions()
+#    settings = load_settings()
+#    savings_goal = settings.savings_goal
+#
+#    ProgramState = "MENU"
+#    history = list of welcome strings + numbered menu options (1-8, Q)
+#    current_entry = empty dictionary
+#    Editing = -1
+#    user_text = ""
+#    pie_chart_surface = None
+#    pie_chart_rect = None
+#
+#    running = True
+#    clock = 60 FPS timer
+#    last_blink = current time
+#    show_cursor = True
+#
+#    WHILE running:
+#        // Cursor blink
+#        current_time = get ticks / 1000
+#        IF current_time - last_blink > 0.5:
+#            show_cursor = NOT show_cursor
+#            last_blink = current_time
+#
+#        // Determine current prompt text based on ProgramState
+#        SWITCH ProgramState:
+#            "MENU": question = "SELECT OPTION (1-8 or Q):"
+#            "GET_DATE": question = "ENTER DATE FOR [INCOME/EXPENSE] (YYYY-MM-DD) or Enter for today:"
+#            "GET_AMOUNT": question = "ENTER AMOUNT:"
+#            "GET_DETAIL": question = "ENTER [SOURCE/CATEGORY]:"
+#            "CONFIRM": question = "SAVE [type] [date] '[detail]' $[amount]? (y/n):"
+#            "REMOVE_SELECT": question = "ENTER NUMBER TO REMOVE (0 to cancel):"
+#            "EDIT_SELECT": question = "ENTER NUMBER TO EDIT (0 to cancel):"
+#            "EDIT_DETAIL": question = "NEW [type] DETAIL (blank to keep):"
+#            "EDIT_AMOUNT": question = "NEW AMOUNT (blank to keep):"
+#            "SET_GOAL": question = "SET NEW SAVINGS GOAL (current: $X):"
+#            "VIEW_PIE": question = ""
+#            default: question = ""
+#
+#        // Event processing
+#        FOR each event in Pygame events:
+#            IF event == QUIT:
+#                running = False
+#
+#            IF Ctrl+V pressed:
+#                paste cleaned clipboard text into user_text (respect CHARACTER_LIMIT)
+#
+#            IF Ctrl+C pressed:
+#                copy current user_text to clipboard
+#
+#            IF RETURN/ENTER pressed:
+#                cmd = trimmed user_text
+#                IF empty and MENU: skip
+#
+#                append formatted question + user_text to history
+#
+#                IF ProgramState == "MENU":
+#                    cl = lowercase(cmd)
+#                    IF cl == "1": set state="GET_DATE", current_entry={type:"income"}
+#                    IF cl == "2": set state="GET_DATE", current_entry={type:"expense"}
+#                    IF cl == "3":  // Balance & Goal
+#                        income, expense, net = calculate_balance()
+#                        progress = 0
+#                        IF savings_goal > 0:
+#                            progress = clamp(0..100, (net / savings_goal) * 100)
+#                        append "BALANCE SUMMARY:"
+#                        append "  Income:      +$X"
+#                        append "  Expenses:    -$X"
+#                        append "  Net Balance: $X"
+#                        IF savings_goal > 0:
+#                            append "  Goal progress: Y.Y% towards $Z"
+#                        ELSE:
+#                            append "  No savings goal set."
+#                        append separator line
+#                    IF cl == "4": display recent 15 transactions (newest first)
+#                    IF cl == "5": set state="REMOVE_SELECT", display numbered list
+#                    IF cl == "6": set state="EDIT_SELECT", display numbered list
+#                    IF cl == "7":  // Pie chart
+#                        pie_data = create_expense_pie()
+#                        IF pie_data is None:
+#                            append "No expenses recorded yet for pie chart."
+#                        ELSE:
+#                            pie_chart_surface, pie_chart_rect = pie_data
+#                            set state="VIEW_PIE"
+#                            append success message
+#                            continue (skip normal input clear)
+#                    IF cl == "8": set state="SET_GOAL"
+#                    IF cl == "q/quit/exit": running = False
+#                    ELSE: append "Invalid option."
+#
+#                ELSE IF state == "GET_DATE":
+#                    IF cmd empty: current_entry.date = today
+#                    ELSE: current_entry.date = cmd
+#                    set state = "GET_AMOUNT"
+#
+#                ELSE IF state == "GET_AMOUNT":
+#                    TRY: current_entry.amount = float(cmd)
+#                         set state = "GET_DETAIL"
+#                    CATCH: append "Error: Invalid number."
+#
+#                ELSE IF state == "GET_DETAIL":
+#                    IF cmd: current_entry.detail = cmd
+#                    ELSE: default detail ("Uncategorized" or "Unknown Source")
+#                    set state = "CONFIRM"
+#
+#                ELSE IF state == "CONFIRM":
+#                    IF cmd == "y":
+#                        append transaction to list
+#                        save_transactions()
+#                        append "✓ TRANSACTION SAVED SUCCESSFULLY."
+#                    ELSE:
+#                        append "Transaction cancelled."
+#                    reset to MENU, clear current_entry
+#
+#                ELSE IF state == "REMOVE_SELECT":
+#                    TRY parse number
+#                    IF 0: cancel
+#                    ELSE IF valid index: remove, save, append success
+#                    ELSE: invalid
+#                    reset to MENU
+#
+#                ELSE IF state == "EDIT_SELECT":
+#                    similar to remove → set Editing index, move to EDIT_DETAIL
+#
+#                ELSE IF state == "EDIT_DETAIL":
+#                    update detail if provided
+#                    move to EDIT_AMOUNT
+#
+#                ELSE IF state == "EDIT_AMOUNT":
+#                    update amount if valid
+#                    save, append success
+#                    reset to MENU
+#
+#                ELSE IF state == "SET_GOAL":
+#                    TRY: new_goal = float(cmd), clamp >=0
+#                         savings_goal = new_goal
+#                         save_settings()
+#                         append success
+#                    CATCH: append error
+#                    reset to MENU
+#
+#                trim history to MAX_HISTORY
+#                clear user_text
+#
+#            IF BACKSPACE: remove last character from user_text
+#
+#            IF ESCAPE:
+#                IF not MENU:
+#                    reset to MENU, clear all temp variables, clear pie chart
+#                    append "← Action cancelled."
+#                ELSE:
+#                    running = False
+#
+#            ELSE IF printable key and under limit:
+#                append character to user_text
+#
+#        // Drawing
+#        fill screen with BG_COLOR
+#
+#        IF logo loaded: draw logo top-right
+#
+#        IF ProgramState == "VIEW_PIE" AND pie_chart_surface exists:
+#            draw pie chart at center
+#            draw title "EXPENSES BY CATEGORY"
+#            draw "Press ESC to return to menu"
+#        ELSE:
+#            // Draw history lines (last VISIBLE_LINES)
+#            start from newest visible entry
+#            FOR each visible line:
+#                choose color (error/success/normal)
+#                render line (safe-clean if needed)
+#
+#            // Prompt
+#            render question
+#
+#            // Input line
+#            cursor = "_" if show_cursor else " "
+#            render "> user_text + cursor"
+#
+#            // Scrollbar if history longer than visible
+#            IF history > VISIBLE_LINES:
+#                draw track and thumb
+#
+#        // Status bar (bottom)
+#        income, expense, net = calculate_balance()
+#        render status line: "Transactions: N | Net: $X | Goal: $Y | State: Z"
+#
+#        // Help text
+#        render "Ctrl+V Paste | Ctrl+C Copy | ESC cancel/return"
+#
+#        update display
+#        tick clock at 60 FPS
+#
+#    // On exit
+#    save_transactions()
+#    save_settings({'savings_goal': savings_goal})
+#    quit Pygame
