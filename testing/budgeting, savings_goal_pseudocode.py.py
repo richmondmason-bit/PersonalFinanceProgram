@@ -63,14 +63,18 @@ def set_budget(category, limit):
 # ask the user to enter a budget limit for that category
     limit = input(f"Please enter the budget limit you would like to save for {category}: ")
 # if the category already exists, update the limit
+    if category in category:
+        print(f"{category} exists!")
 
 # if the category does not exist, create a new category
+    elif 
 
 # save the updated budget data to the file
 
 
 # function add_expense(category, amount)
-def add_expense(category, amount)
+def add_expense(category, amount):
+    pass
 # load the budget data
 # ask the user for the category and expense amount
 # if the category exists, add the expense amount to the spent total
