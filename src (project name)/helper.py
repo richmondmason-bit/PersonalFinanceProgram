@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import io
 import pygame
 
-CSV_FILE = Path(r"docs\Expenses.csv")
+CSV_FILE = Path("Expenses.csv")
 
 def load_transactions() -> List[Dict]:
     transactions = []
@@ -17,12 +17,11 @@ def load_transactions() -> List[Dict]:
                 try:
                     row['amount'] = float(row['amount'])
                     transactions.append(row)
-                except:
-                    pass
+                except ValueError:
+                    continue
     return transactions
 
 def save_transactions(transactions: List[Dict]):
-    CSV_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=["date","type","amount","detail"])
         writer.writeheader()
@@ -47,10 +46,11 @@ def create_pie(transactions):
 
     fig, ax = plt.subplots()
     ax.pie(data.values(), labels=data.keys(), autopct='%1.1f%%')
+    ax.set_title("Expenses by Category")
 
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
-    plt.close()
+    plt.close(fig)
 
     return pygame.image.load(buf, 'chart.png')
