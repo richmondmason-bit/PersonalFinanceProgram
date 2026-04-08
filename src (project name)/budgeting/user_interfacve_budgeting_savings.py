@@ -1,5 +1,6 @@
-from savings_goals import set_savings_goal, add_savings, view_savings_progress
-from budgeting import manage_budget, add_expense, view_budget_status
+import savings_goals
+import budgeting
+
 def main_menu():
     while True:
         print("\n==============================")
@@ -20,7 +21,7 @@ def main_menu():
         elif choice == '2': 
             savings_goals.add_savings()
         elif choice == '3': 
-            savings_goals.view_savings_progress()
+            savings_goals.view_progress()
         elif choice == '4': 
             budgeting.manage_budget()
         elif choice == '5': 

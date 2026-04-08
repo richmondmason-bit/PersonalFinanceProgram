@@ -60,46 +60,19 @@ def compare_budget():
             print("Budget reached exactly.")
         else:
             print(f"Remaining: ${limit - spent:.2f}")
-# display menu
-# 1 set savings goal
-# 2 add savings
-# 3 view savings progress
-# 4 set budget category
-# 5 add expense
-# 6 compare budget
-# 7 exit program
-while True:
-    user = input("What would you like to do? ")
-# if user chooses set savings goal
-    if user == '1':
-        set_savings_goal()
-# call set_savings_goal function
-    elif user == '2':
-        add_savings()
 
-# if user chooses add savings
-# call add_savings function
-    elif user == '3':
-        view_progress()
-# if user chooses view progress
-# call view_progress function
-    elif user == '4':
-        set_budget()
-# if user chooses set budget
-# call set_budget function
-    elif user == '5':
-        add_expense()
-# if user chooses add expense
-# call add_expense function
-    elif user == '6':
-        compare_budget()
-# if user chooses compare budget
-# call compare_budget function
-    elif user == '7':
-        break
-# if user chooses exit
-# save all data and end program
-    else:
-        print("Please enter a valid choice..")
-        break
-        
+def view_budget_status():
+    """Entry point for Option 6: View Budget Status"""
+    budget = load_budget_data()
+    if not budget:
+        print("\nNo budget data found. Please set a budget first.")
+        return
+    
+    print("\n--- Current Budget Status ---")
+
+    compare_budget()
+
+def manage_budget():
+    """Entry point for Option 4: Set/Update Category Budget"""
+    print("\n--- Manage Budget Categories ---")
+    set_budget()
