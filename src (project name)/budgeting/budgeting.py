@@ -1,66 +1,65 @@
 # BUDGETING SYSTEM PSEUDOCODE
+import csv
+import os
 
-# when the program starts, load the budget file
-# the file should store category, budget limit, and amount spent
+BUDGET_FILE = "budget_data.csv"
 
-# function set_budget(category, limit)
-def set_budget(category, limit):
-# ask the user to enter a category name
-    category = input("Please enter the name of the category you would like to start budgeting in: ")
-# ask the user to enter a budget limit for that category
-    limit = input(f"Please enter the budget limit you would like to save for {category}: ")
-# if the category already exists, update the limit
-    if category in category:
-        print(f"{category} exists!")
+def load_budget_data():
+    budget = {} # Format: { 'Food': [limit, spent] }
+    if not os.path.exists(BUDGET_FILE):
+        return budget
+    with open(BUDGET_FILE, "r") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            category, limit, spent = row
+            budget[category] = [float(limit), float(spent)]
+    return budget
 
-# if the category does not exist, create a new category
-    elif 
+def save_budget_data(budget):
+    with open(BUDGET_FILE, "w", newline="") as f:
+        writer = csv.writer(f)
+        for cat, values in budget.items():
+            writer.writerow([cat, values[0], values[1]])
 
-# save the updated budget data to the file
+def set_budget():
+    budget = load_budget_data()
+    cat = input("Category name: ")
+    try:
+        limit = float(input(f"Limit for {cat}: "))
+        if cat in budget:
+            budget[cat][0] = limit # Update existing
+        else:
+            budget[cat] = [limit, 0.0] # Create new
+        save_budget_data(budget)
+        print(f"Budget for {cat} saved.")
+    except ValueError:
+        print("Invalid number.")
 
+def add_expense():
+    budget = load_budget_data()
+    cat = input("Enter category: ")
+    if cat in budget:
+        try:
+            amount = float(input("Expense amount: "))
+            budget[cat][1] += amount
+            save_budget_data(budget)
+            print("Expense added.")
+        except ValueError:
+            print("Invalid number.")
+    else:
+        print("Category not found.")
 
-# function add_expense(category, amount)
-def add_expense(category, amount):
-    pass
-# load the budget data
-# ask the user for the category and expense amount
-# if the category exists, add the expense amount to the spent total
-# if the category does not exist, print an error message
-# save the updated budget data
-
-# function compare_budget()
 def compare_budget():
-    pass
-# load the budget data
-# for each category in the budget data
-# get the budget limit and amount spent
-# print the category name
-# print the budget limit and amount spent
-# if spent > limit, print over budget warning
-# if spent == limit, print budget exactly used
-# if spent < limit, print remaining budget amount
-
-# function save_budget_data()
-def dave_budget_data():
-    pass
-# open the csv file in write mode
-# write each category, limit, and spent amount into the file
-# close the file
-
-# function load_budget_data()
-def load_budget():
-    pass
-# open the csv file in read mode
-# read each row and store in a dictionary or list
-# return the budget data
-
-
-# PERSONAL FINANCE MENU PSEUDOCODE
-
-# start program
-# load savings data from csv file
-# load budget data from csv file
-
+    budget = load_budget_data()
+    for cat, (limit, spent) in budget.items():
+        print(f"\nCategory: {cat}")
+        print(f"Limit: ${limit:.2f} | Spent: ${spent:.2f}")
+        if spent > limit:
+            print(f"WARNING: Over budget by ${spent - limit:.2f}")
+        elif spent == limit:
+            print("Budget reached exactly.")
+        else:
+            print(f"Remaining: ${limit - spent:.2f}")
 # display menu
 # 1 set savings goal
 # 2 add savings

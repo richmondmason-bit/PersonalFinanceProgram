@@ -1,5 +1,6 @@
 # AR budgeting and savings Goal tracker pseudocode
 import csv
+import os
 # SAVINGS GOAL TRACKER PSEUDOCODE
 information =  "data.csv"
 # when the program starts, load the savings file (goal amount and saved amount)
