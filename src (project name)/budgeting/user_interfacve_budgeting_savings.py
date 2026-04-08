@@ -28,6 +28,8 @@ def main_menu():
             budgeting.add_expense()
         elif choice == '6': 
             budgeting.view_budget_status()
+        elif choice == '7':
+            break
         else:
             print("Invalid choice, try again.")
 
