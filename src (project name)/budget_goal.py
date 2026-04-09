@@ -1,21 +1,17 @@
-import json
-from pathlib import Path
-
-SETTINGS_FILE = Path("docs/settings.json")
+import helper
 
 
 def load_settings():
-    if SETTINGS_FILE.exists():
-        try:
-            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            return {}
-    return {}
+    goal = helper.load_goal()
+    budgets = helper.load_budgets()
+    return {"goal": goal, "budgets": budgets}
+
 
 def save_settings(settings):
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(settings, f, indent=4)
+    goal = settings.get("goal", 0)
+    budgets = settings.get("budgets", {})
+    helper.save_goal(goal)
+    helper.save_budgets(budgets)
 
 
 def set_goal(settings, amount):
@@ -49,7 +45,7 @@ def check_budget(expenses, settings):
     totals = {}
     for e in expenses:
         cat = e.get("category")
-        if not cat:  # safety net: skip any bad row silently
+        if not cat:
             continue
         totals[cat] = totals.get(cat, 0) + e["amount"]
 
