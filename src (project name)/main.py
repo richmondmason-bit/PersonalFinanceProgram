@@ -1,5 +1,6 @@
 import pygame
 from datetime import datetime
+
 import helper
 import budget_goal
 
@@ -9,10 +10,11 @@ pygame.display.set_caption("Finance Tracker")
 
 font = pygame.font.SysFont("consolas", 20)
 
-transactions = helper.load_transactions()
+income_data = helper.load_income()
+expense_data = helper.load_expenses()
 settings = budget_goal.load_settings()
 
-ProgramState = "menu"
+state = "menu"
 user_text = ""
 history = []
 pie_chart = None
@@ -30,112 +32,115 @@ while running:
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_RETURN:
-                Command = user_text.strip()
+                cmd = user_text.strip()
                 user_text = ""
 
-                if ProgramState == "menu":
-                    if Command == "1":
-                        ProgramState = "income"
-                    elif Command == "2":
-                        ProgramState = "expense"
-                    elif Command == "3":
-                        income, expense, net = helper.calculate_balance(transactions)
-                        goal = settings.get("goal", 0)
-                        progress = budget_goal.goal_progress(net, goal)
+                if state == "menu":
+                    if cmd == "1":
+                        state = "add_income"
+                    elif cmd == "2":
+                        state = "add_expense"
+                    elif cmd == "3":
+                        inc = helper.total_income(income_data)
+                        exp = helper.total_expenses(expense_data)
 
-                        history.append(f"Income: ${income:.2f} Expense: ${expense:.2f} Net: ${net:.2f}")
-                        history.append(f"Goal Progress: {progress:.1f}%")
+                        history.append(f"Income: ${inc:.2f}")
+                        history.append(f"Expenses: ${exp:.2f}")
+                        history.append(f"Balance: ${inc-exp:.2f}")
 
-                    elif Command == "4":
-                        ProgramState = "budget"
+                        warnings = budget_goal.check_budget(expense_data, settings)
+                        for w in warnings:
+                            history.append(w)
 
-                    elif Command == "5":
-                        ProgramState = "goal"
+                        goal = budget_goal.get_goal(settings)
+                        if goal > 0:
+                            balance = inc - exp
+                            progress = budget_goal.goal_progress(balance, goal)
+                            history.append(f"Goal Progress: {progress:.1f}% (${balance:.2f} / ${goal:.2f})")
 
-                    elif Command == "6":
-                        pie_chart = helper.create_pie(transactions)
-
-                    elif Command == "7":
+                    elif cmd == "4":
+                        state = "budget"
+                    elif cmd == "5":
+                        state = "goal"
+                    elif cmd == "6":
+                        pie_chart = helper.create_pie(expense_data)
+                    elif cmd == "7":
                         running = False
 
-                    elif Command == "8":
-                        if transactions:
-                            transactions.pop()
-                            helper.save_transactions(transactions)
-                            history.append("Last transaction removed")
-
-                elif ProgramState in ["income","expense"]:
+                elif state == "add_income":
                     try:
-                        parts = Command.split(",")
-                        amt = float(parts[0])
-                        detail = parts[1].strip() if len(parts) > 1 else "General"
-
-                        transactions.append({
+                        amt, source = cmd.split(",")
+                        income_data.append({
                             "date": datetime.now().isoformat(),
-                            "type": ProgramState,
-                            "amount": amt,
-                            "detail": detail
+                            "amount": float(amt),
+                            "source": source.strip()
                         })
-
-                        helper.save_transactions(transactions)
-                        history.append("Saved!")
-                        ProgramState = "menu"
-
+                        helper.save_income(income_data)
+                        history.append("Income saved")
+                        state = "menu"
                     except ValueError:
-                        history.append("Invalid format. Use: amount or amount,category")
+                        history.append("Use: amount,source")
 
-                elif ProgramState == "goal":
+                elif state == "add_expense":
                     try:
-                        budget_goal.set_goal(settings, float(Command))
+                        amt, cat = cmd.split(",")
+                        expense_data.append({
+                            "date": datetime.now().isoformat(),
+                            "amount": float(amt),
+                            "category": cat.strip()
+                        })
+                        helper.save_expenses(expense_data)
+                        history.append("Expense saved")
+                        state = "menu"
+                    except ValueError:
+                        history.append("Use: amount,category")
+
+                elif state == "goal":
+                    try:
+                        budget_goal.set_goal(settings, float(cmd))
                         budget_goal.save_settings(settings)
                         history.append("Goal updated")
-                        ProgramState = "menu"
+                        state = "menu"
                     except ValueError:
                         history.append("Invalid number")
 
-                elif ProgramState == "budget":
+                elif state == "budget":
                     try:
-                        cat, amt = Command.split(",")
+                        cat, amt = cmd.split(",")
                         budget_goal.set_budget(settings, cat.strip(), float(amt))
                         budget_goal.save_settings(settings)
                         history.append("Budget set")
-                        ProgramState = "menu"
+                        state = "menu"
                     except ValueError:
-                        history.append("Use format: Food,300")
+                        history.append("Use: Food,300")
 
             elif event.key == pygame.K_BACKSPACE:
                 user_text = user_text[:-1]
             else:
                 user_text += event.unicode
 
-    # UI
-    draw_text("1:Add Income  2:Add Expense  3:View Balance", 20)
+    draw_text("1:Add Income  2:Add Expense  3:View Totals", 20)
     draw_text("4:Set Budget  5:Set Goal  6:Pie Chart", 50)
-    draw_text("7:Quit  8:Undo Last", 80)
+    draw_text("7:Quit", 80)
 
-    # State prompts
-    if ProgramState == "income":
-        draw_text("Enter: amount,category (e.g. 1000,Salary)", 480)
-    elif ProgramState == "expense":
-        draw_text("Enter: amount,category (e.g. 25,Food)", 480)
-    elif ProgramState == "goal":
-        draw_text("Enter goal amount:", 480)
-    elif ProgramState == "budget":
-        draw_text("Enter category,amount (e.g. Food,300):", 480)
+    if state == "add_income":
+        draw_text("Enter: amount,source (1000,Job)", 500)
+    elif state == "add_expense":
+        draw_text("Enter: amount,category (50,Food)", 500)
+    elif state == "goal":
+        draw_text("Enter goal amount:", 500)
+    elif state == "budget":
+        draw_text("Enter category,amount:", 500)
 
-    # History
     y = 120
     for h in history[-10:]:
-        color = (0,255,0) if "Saved" in h else (255,255,255)
-        draw_text(h, y, color)
+        draw_text(h, y)
         y += 25
 
-    # Input
-    draw_text("> " + user_text, 520)
+    draw_text("> " + user_text, 550)
 
-    # Pie chart (persistent display)
     if pie_chart:
-        screen.blit(pie_chart, (200,150))
+        screen.blit(pie_chart, (400, 120))
 
     pygame.display.flip()
 

@@ -1,3 +1,6 @@
 {
-  "savings_goal": 7500.0
+    "budgets": {
+        "job": 234.0
+    },
+    "goal": 7435.0
 }

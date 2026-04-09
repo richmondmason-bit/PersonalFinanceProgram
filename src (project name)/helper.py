@@ -6,51 +6,86 @@ import matplotlib.pyplot as plt
 import io
 import pygame
 
-CSV_FILE = Path("Expenses.csv")
+DOCS_DIR = Path("docs")
+DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-def load_transactions() -> List[Dict]:
-    transactions = []
-    if CSV_FILE.exists():
-        with open(CSV_FILE, "r", newline="", encoding="utf-8") as f:
+INCOME_FILE = DOCS_DIR / "income.csv"
+EXPENSE_FILE = DOCS_DIR / "Expenses.csv"
+
+
+def load_csv(file_path) -> List[Dict]:
+    data = []
+    if file_path.exists():
+        with open(file_path, "r", newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 try:
-                    row['amount'] = float(row['amount'])
-                    transactions.append(row)
-                except ValueError:
+                    row["amount"] = float(row["amount"])
+                    data.append(row)
+                except (ValueError, KeyError):
                     continue
-    return transactions
+    return data
 
-def save_transactions(transactions: List[Dict]):
-    with open(CSV_FILE, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["date","type","amount","detail"])
+
+def load_income():
+    data = load_csv(INCOME_FILE)
+    # Safe filter: keep only rows with valid source
+    return [row for row in data if row.get("source") not in (None, "", " ")]
+
+
+def load_expenses():
+    data = load_csv(EXPENSE_FILE)
+    # Safe filter: keep only rows with valid category (prevents all KeyErrors)
+    return [row for row in data if row.get("category") not in (None, "", " ")]
+
+
+def save_csv(file_path, data, fields):
+    with open(file_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
-        writer.writerows(transactions)
+        writer.writerows(data)
 
-def calculate_balance(transactions):
-    income = sum(t['amount'] for t in transactions if t['type']=="income")
-    expense = sum(t['amount'] for t in transactions if t['type']=="expense")
-    return income, expense, income - expense
 
-def category_totals(transactions):
+def save_income(data):
+    save_csv(INCOME_FILE, data, ["date", "amount", "source"])
+
+
+def save_expenses(data):
+    save_csv(EXPENSE_FILE, data, ["date", "amount", "category"])
+
+
+def total_income(data):
+    return sum(d["amount"] for d in data)
+
+def total_expenses(data):
+    return sum(d["amount"] for d in data)
+
+
+def category_totals(expenses):
     totals = defaultdict(float)
-    for t in transactions:
-        if t['type'] == 'expense':
-            totals[t['detail']] += t['amount']
+    for e in expenses:
+        cat = e.get("category")
+        if not cat:  # safety net even if filter missed something
+            continue
+        totals[cat] += e["amount"]
     return totals
 
-def create_pie(transactions):
-    data = category_totals(transactions)
+
+def create_pie(expenses):
+    data = category_totals(expenses)
     if not data:
         return None
 
-    fig, ax = plt.subplots()
-    ax.pie(data.values(), labels=data.keys(), autopct='%1.1f%%')
+    sorted_data = dict(sorted(data.items(), key=lambda x: x[1], reverse=True))
+
+    fig, ax = plt.subplots(figsize=(4, 4))
+    ax.pie(sorted_data.values(), labels=sorted_data.keys(), autopct="%1.1f%%")
     ax.set_title("Expenses by Category")
+    plt.tight_layout()
 
     buf = io.BytesIO()
-    plt.savefig(buf, format='png')
+    plt.savefig(buf, format="png")
     buf.seek(0)
     plt.close(fig)
 
-    return pygame.image.load(buf, 'chart.png')
+    return pygame.image.load(buf, "chart.png")
